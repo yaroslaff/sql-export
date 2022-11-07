@@ -62,7 +62,7 @@ id: {{.id}}
 title: {{.title}}
 price: {{.price}}
 $ ./sql-export -u dbuser -p dbpass -d dbname -q 'SELECT id, title, price FROM libro' -o '/tmp/libro/{{.id}}.txt' --tpl out-template.html 
-xenon@mir:~/repo/sql-export$ cat /tmp/libro/123.txt 
+$ cat /tmp/libro/123.txt 
 id: 123
 title: ALLGEMEINE GESCHICHTE DER HANDFEUERWAFFEN. Eine Übersicht ihrer Entwickelung. Mit 123 Abbildungen und 4 Ubersichtstafeln. - Günther Reinhold. - Reprint Verlag, - 2001
 price: 45
