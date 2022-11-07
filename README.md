@@ -1,5 +1,6 @@
 # SQL Export
 Export SQL tables or queries to file(s) in JSON/Markdown format.
+Mainly to use with static site generators like [Hugo](https://gohugo.io/).
 
 ## Usage
 
@@ -67,6 +68,31 @@ title: ALLGEMEINE GESCHICHTE DER HANDFEUERWAFFEN. Eine Übersicht ihrer Entwicke
 price: 45
 ~~~
 
+## Options
+~~~
+$ ./sql-export -h
+Usage of ./sql-export:
+  -P int
+    	port, def: 3306 (default 3306)
+  -d string
+    	database name
+  -f string
+    	Format: json or md (markdown with frontmatter) or template (default "template")
+  -o string
+    	Output filename
+  -p string
+    	password
+  -q string
+    	SQL query or table name
+  -s string
+    	server, def: localhost (default "localhost")
+  -tpl string
+    	Template input file
+  -u string
+    	user, def: xenon (default "xenon")
+  -v	verbose mode
+~~~
+
 ## Install/build
 ~~~
 git clone https://github.com/yaroslaff/sql-export
@@ -76,3 +102,17 @@ cp sql-export /usr/local/bin
 ~~~
 
 or download from https://github.com/yaroslaff/sql-export from **Releases** (if your arch is x86_64).
+
+## Benchmarking
+sql-export is written in Go, so it's very fast. I test on database with 57000+ records.
+
+|Test                                                            |time     |
+|---                                                             |---      |
+| Export 3 fields of 57k+ records to one (11Mb) json list        | 0.336s  |
+| Export all (40) fields of 57k+ records to one (92Mb) json list | 3.102s  |
+| Export 3 fields to 57k+ JSON files                             | 5.573s  |
+| Export 3 fields to 57k+ md/yaml files                          | 10.869s |
+| Export 3 fields to 57k+ custom template files                  | 4.321s  |
+
+
+

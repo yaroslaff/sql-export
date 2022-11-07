@@ -87,16 +87,9 @@ func main() {
 	flag.StringVar(&dbname, "d", "", "database name")
 	flag.StringVar(&q, "q", "", "SQL query or table name")
 	flag.StringVar(&output, "o", "", "Output filename")
-	flag.StringVar(&format, "f", "template", "Format: json or md (markdown with frontmatter) or (default:) template")
+	flag.StringVar(&format, "f", "template", "Format: json or md (markdown with frontmatter) or template")
 	flag.StringVar(&tpl, "tpl", "", "Template input file")
 	flag.BoolVar(&verbose, "v", false, "verbose mode")
-
-	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(),
-			"Usage: %s [filename]\n"+
-				"  if no filename, then stdin", os.Args[0])
-		flag.PrintDefaults()
-	}
 
 	flag.Parse()
 
