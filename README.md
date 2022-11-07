@@ -4,7 +4,7 @@ Mainly to use with static site generators like [Hugo](https://gohugo.io/).
 
 ## Usage
 
-### export SQL query to one JSON list or file
+### Export SQL query to one JSON list or file
 ~~~
 $ ./sql-export -u dbuser -p dbpass -d dbname -q 'SELECT title, price FROM libro LIMIT 2'  
 [
@@ -24,7 +24,7 @@ Surely, you can redirect to file:
 $ ./sql-export -u dbuser -p dbpass -d dbname -q 'SELECT title, price FROM libro LIMIT 2' > /tmp/books.json
 ~~~
 
-### export SQL to many (one file per record) JSON files 
+### Export SQL to many (one file per record) JSON files 
 Use `-f json` and provide template to output filename `-o '/tmp/libro/{{.id}}.json'`.
 
 ~~~
@@ -37,7 +37,7 @@ $ cat /tmp/libro/123.json
 }
 ~~~
 
-### export SQL to many markdown files with YAML frontmatter 
+### Export SQL to many markdown files with YAML frontmatter 
 Use `-f md` and provide template to output filename `-o '/tmp/libro/{{.id}}.json'`.
 
 ~~~
@@ -53,7 +53,7 @@ title: ALLGEMEINE GESCHICHTE DER HANDFEUERWAFFEN. Eine Übersicht ihrer Entwicke
 ---
 ~~~
 
-### export SQL to many files with any custom template 
+### Export SQL to many files with any custom template 
 Provide output filename template (`-o`) and template (`--tpl`)
 
 ~~~
@@ -92,6 +92,8 @@ Usage of ./sql-export:
     	user, def: xenon (default "xenon")
   -v	verbose mode
 ~~~
+
+You may use table name as value to `-q`. `-q tableName` equal to `-q SELECT * FROM tableName`
 
 ## Install/build
 ~~~
