@@ -1,6 +1,7 @@
 # SQL Export
-Export SQL tables or queries to file(s) in JSON/Markdown format.
-Mainly to use with static site generators like [Hugo](https://gohugo.io/).
+Export SQL tables or queries to file(s) in JSON/Markdown format. Mainly to use with static site generators like [Hugo](https://gohugo.io/).
+
+`sql-export` can generate thousands .md files with YAML frontmatter based on content from mysql database in few seconds.
 
 ## Usage
 
