@@ -1,31 +1,60 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html/template"
 	"os"
 	"os/user"
-	"reflect"
+	"path"
 	"strconv"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 
 	log "github.com/sirupsen/logrus"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func toJsonMap(data []byte) (interface{}, error) {
-	var newMap interface{}
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
 
-	err := json.Unmarshal(data, &newMap)
+func saveFile(pathTpl *template.Template, bodyTpl *template.Template, format string, m map[string]interface{}) {
 
-	if err != nil {
-		return nil, err
+	var path bytes.Buffer
+
+	err := pathTpl.Execute(&path, m)
+	check(err)
+
+	log.Debugf("Write %s file: %s\n", format, path.String())
+
+	f, err := os.Create(path.String())
+	check(err)
+	defer f.Close()
+
+	switch format {
+	case "template":
+		err = bodyTpl.Execute(f, m)
+	case "json":
+		data, err := json.MarshalIndent(m, "", "    ")
+		check(err)
+		f.Write(data)
+	case "md":
+		fmt.Fprintf(f, "---\n")
+		data, err := yaml.Marshal(m)
+		check(err)
+		fmt.Fprintf(f, "%s\n", data)
+		fmt.Fprintf(f, "---\n")
 	}
 
-	return newMap, nil
+	check(err)
 }
 
 func main() {
@@ -33,8 +62,6 @@ func main() {
 	//def_server := "username:password@tcp(127.0.0.1:3306)/test"
 	def_host := "localhost"
 	def_user, err := user.Current()
-
-	println(reflect.TypeOf(&def_user))
 
 	def_port := 3306
 
@@ -46,7 +73,12 @@ func main() {
 		dbname   string
 		q        string
 		verbose  bool
+		output   string
+		format   string
+		tpl      string
 	)
+
+	var pathTpl, contentTpl *template.Template
 
 	flag.StringVar(&host, "s", def_host, "server, def: "+def_host)
 	flag.IntVar(&port, "P", def_port, fmt.Sprintf("port, def: %d", def_port))
@@ -54,6 +86,9 @@ func main() {
 	flag.StringVar(&password, "p", "", "password")
 	flag.StringVar(&dbname, "d", "", "database name")
 	flag.StringVar(&q, "q", "", "SQL query or table name")
+	flag.StringVar(&output, "o", "", "Output filename")
+	flag.StringVar(&format, "f", "template", "Format: json or md (markdown with frontmatter) or (default:) template")
+	flag.StringVar(&tpl, "tpl", "", "Template input file")
 	flag.BoolVar(&verbose, "v", false, "verbose mode")
 
 	flag.Usage = func() {
@@ -68,7 +103,26 @@ func main() {
 	if verbose {
 		log.SetLevel(log.DebugLevel)
 	}
-	log.Debug("Debug")
+
+	/* prepare templates */
+
+	if output != "" {
+
+		pathTpl = template.Must(template.New("outfile").Parse(output))
+		log.Debugf("Content: %#v", contentTpl)
+
+		if format != "template" && format != "json" && format != "md" {
+			panic("Format must be one of template/json/md")
+		}
+
+		if format == "template" {
+			if tpl == "" {
+				panic("When format (-f) is template, --tpl is required")
+			}
+			contentTpl = template.Must(template.New(path.Base(tpl)).ParseFiles(tpl))
+		}
+
+	}
 
 	server := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, dbname)
 
@@ -76,13 +130,8 @@ func main() {
 	// I've set up a database on my local machine using phpmyadmin.
 	// The database is called testDb
 	db, err := sql.Open("mysql", server)
-
-	// if there is an error opening the connection, handle it
-	if err != nil {
-		panic(err.Error())
-	} else {
-		log.Debug("Connected!")
-	}
+	check(err)
+	log.Debug("Connected to database!")
 
 	// defer the close till after the main function has finished
 	// executing
@@ -153,14 +202,21 @@ func main() {
 		}
 
 		// Outputs: map[columnName:value columnName2:value2 columnName3:value3 ...]
-		mlist = append(mlist, m)
+		if pathTpl != nil {
+			saveFile(pathTpl, contentTpl, format, m)
+		} else {
+			mlist = append(mlist, m)
+		}
+
 	}
 
-	j, err := json.MarshalIndent(mlist, "", "    ")
-	if err != nil {
-		fmt.Printf("ERROR: %s", err)
-		return
+	if output == "" {
+		j, err := json.MarshalIndent(mlist, "", "    ")
+		if err != nil {
+			fmt.Printf("ERROR: %s", err)
+			return
+		}
+		fmt.Printf("%s", j)
 	}
 
-	fmt.Printf("%s", j)
 }
