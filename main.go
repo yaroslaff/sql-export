@@ -85,7 +85,7 @@ func getDefaultPort(dbtype string, port int) int {
 
 var Usage = func() {
 
-	version := "0.0.4"
+	version := "0.0.5"
 
 	fmt.Fprintf(flag.CommandLine.Output(), "sql-export ( https://github.com/yaroslaff/sql-export ) version %s\nUsage:\n", version)
 	flag.PrintDefaults()
