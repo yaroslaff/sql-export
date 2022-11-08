@@ -11,7 +11,7 @@ Export SQL tables or queries to file(s) in JSON/Markdown format. Mainly to use w
 |---           |---      |---         |---|
 |database type | `-d`    |`$DBTYPE`   | `mysql`|
 |database host | `-h`    |`$DBHOST`   | `localhost`|
-|database port | `-port` |`$DBPORT`   | `localhost`|
+|database port | `-port` |`$DBPORT`   | 3306 |
 |database user | `-u`    |`$DBUSER`   | current system user name |
 |database name | `-p`    |`$DBPASS`   |   |
 
