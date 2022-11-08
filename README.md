@@ -110,7 +110,7 @@ You may use table name as value to `-q`. `-q tableName` equals to `-q SELECT * F
 |database user | `-u`    |`$DBUSER`   | current system user name |
 |database name | `-p`    |`$DBPASS`   |   |
 
-You can use .env:
+You can use `.env` file:
 ~~~
 DBUSER=xenon
 DBPASS=YouWillNotSeeMyRealPasswordHere
