@@ -5,9 +5,30 @@ Export SQL tables or queries to file(s) in JSON/Markdown format. Mainly to use w
 
 ## Usage
 
+### Database credentials
+
+|value         |key      |environment |default value|
+|---           |---      |---         |---|
+|database type | `-d`    |`$DBTYPE`   | `mysql`|
+|database host | `-h`    |`$DBHOST`   | `localhost`|
+|database port | `-port` |`$DBPORT`   | `localhost`|
+|database user | `-u`    |`$DBUSER`   | current system user name |
+|database name | `-p`    |`$DBPASS`   |   |
+
+You can use .env:
+~~~
+DBUSER=xenon
+DBPASS=YouWillNotSeeMyRealPasswordHere
+DBHOST=localhost
+DBNAME=books
+~~~
+
+Later, for brevity, we will omit db credentials in examples, assume it comes from environment or .env file
+
+
 ### Export SQL query to one JSON list or file
 ~~~
-$ ./sql-export -u dbuser -p dbpass -d dbname -q 'SELECT title, price FROM libro LIMIT 2'  
+$ ./sql-export -q 'SELECT title, price FROM libro LIMIT 2'  
 [
     {
         "price": 170,
@@ -22,14 +43,14 @@ $ ./sql-export -u dbuser -p dbpass -d dbname -q 'SELECT title, price FROM libro 
 
 Surely, you can redirect to file:
 ~~~
-$ ./sql-export -u dbuser -p dbpass -d dbname -q 'SELECT title, price FROM libro LIMIT 2' > /tmp/books.json
+$ ./sql-export -q 'SELECT title, price FROM libro LIMIT 2' > /tmp/books.json
 ~~~
 
 ### Export SQL to many (one file per record) JSON files 
 Use `-f json` and provide template to output filename `-o '/tmp/libro/{{.id}}.json'`.
 
 ~~~
-$ ./sql-export -u dbuser -p dbpass -d dbname -q 'SELECT id, title, price FROM libro' -f json -o '/tmp/libro/{{.id}}.json'
+$ ./sql-export -q 'SELECT id, title, price FROM libro' -f json -o '/tmp/libro/{{.id}}.json'
 $ cat /tmp/libro/123.json 
 {
     "id": 123,
@@ -42,7 +63,7 @@ $ cat /tmp/libro/123.json
 Use `-f md` and provide template to output filename `-o '/tmp/libro/{{.id}}.json'`.
 
 ~~~
-$ ./sql-export -u dbuser -p dbpass -d dbname -q 'SELECT id, title, price FROM libro' -f md -o '/tmp/libro/{{.id}}.md'
+$ ./sql-export -q 'SELECT id, title, price FROM libro' -f md -o '/tmp/libro/{{.id}}.md'
 $ cat /tmp/libro/123.md 
 ---
 id: 123
@@ -62,7 +83,7 @@ $ cat out-template.html
 id: {{.id}}
 title: {{.title}}
 price: {{.price}}
-$ ./sql-export -u dbuser -p dbpass -d dbname -q 'SELECT id, title, price FROM libro' -o '/tmp/libro/{{.id}}.txt' --tpl out-template.html 
+$ ./sql-export -q 'SELECT id, title, price FROM libro' -o '/tmp/libro/{{.id}}.txt' --tpl out-template.html 
 $ cat /tmp/libro/123.txt 
 id: 123
 title: ALLGEMEINE GESCHICHTE DER HANDFEUERWAFFEN. Eine Übersicht ihrer Entwickelung. Mit 123 Abbildungen und 4 Ubersichtstafeln. - Günther Reinhold. - Reprint Verlag, - 2001
@@ -71,30 +92,32 @@ price: 45
 
 ## Options
 ~~~
-$ ./sql-export -h
+$ ./sql-export --help
 Usage of ./sql-export:
-  -P int
-    	port, def: 3306 (default 3306)
   -d string
-    	database name
+    	$DBTYPE (default "mysql")
   -f string
     	Format: json or md (markdown with frontmatter) or template (default "template")
+  -h string
+    	$DBHOST (default "localhost")
+  -n string
+    	$DBNAME (default "XXXXXX")
   -o string
     	Output filename
   -p string
-    	password
+    	$DBPASS (default "XXXXXX")
+  -port int
+    	$DBPORT (default 3306)
   -q string
     	SQL query or table name
-  -s string
-    	server, def: localhost (default "localhost")
   -tpl string
     	Template input file
   -u string
-    	user, def: xenon (default "xenon")
+    	$DBUSER (default "XXXXXX")
   -v	verbose mode
 ~~~
 
-You may use table name as value to `-q`. `-q tableName` equal to `-q SELECT * FROM tableName`
+You may use table name as value to `-q`. `-q tableName` equals to `-q SELECT * FROM tableName`
 
 ## Install/build
 ~~~

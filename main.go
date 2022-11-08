@@ -18,6 +18,7 @@ import (
 	log "github.com/sirupsen/logrus"
 
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 func check(e error) {
@@ -57,13 +58,26 @@ func saveFile(pathTpl *template.Template, bodyTpl *template.Template, format str
 	check(err)
 }
 
+func getEnvDef(key, def string) string {
+	value := os.Getenv(key)
+	if len(value) == 0 {
+		return def
+	}
+	return value
+}
+
 func main() {
 
 	//def_server := "username:password@tcp(127.0.0.1:3306)/test"
-	def_host := "localhost"
+	def_dbhost := getEnvDef("DBHOST", "localhost")
 	def_user, err := user.Current()
+	check(err)
+	def_dbuser := getEnvDef("DBUSER", def_user.Username)
+	def_dbpass := getEnvDef("DBPASS", "")
 
-	def_port := 3306
+	def_port, _ := strconv.Atoi(getEnvDef("DBPORT", "3306"))
+	def_dbname := getEnvDef("DBNAME", "")
+	def_dbtype := "mysql"
 
 	var (
 		host     string
@@ -76,15 +90,17 @@ func main() {
 		output   string
 		format   string
 		tpl      string
+		dbtype   string
 	)
 
 	var pathTpl, contentTpl *template.Template
 
-	flag.StringVar(&host, "s", def_host, "server, def: "+def_host)
-	flag.IntVar(&port, "P", def_port, fmt.Sprintf("port, def: %d", def_port))
-	flag.StringVar(&user, "u", def_user.Username, "user, def: "+def_user.Username)
-	flag.StringVar(&password, "p", "", "password")
-	flag.StringVar(&dbname, "d", "", "database name")
+	flag.StringVar(&host, "h", def_dbhost, "$DBHOST")
+	flag.IntVar(&port, "port", def_port, "$DBPORT")
+	flag.StringVar(&user, "u", def_dbuser, "$DBUSER")
+	flag.StringVar(&password, "p", def_dbpass, "$DBPASS")
+	flag.StringVar(&dbtype, "d", def_dbtype, "$DBTYPE")
+	flag.StringVar(&dbname, "n", def_dbname, "$DBNAME")
 	flag.StringVar(&q, "q", "", "SQL query or table name")
 	flag.StringVar(&output, "o", "", "Output filename")
 	flag.StringVar(&format, "f", "template", "Format: json or md (markdown with frontmatter) or template")
@@ -97,8 +113,12 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	/* prepare templates */
+	if q == "" {
+		log.Error("Provide SQL query (e.g -q \"SELECT id, title FROM tablename\") or just -q tablename")
+		os.Exit(1)
+	}
 
+	/* prepare templates */
 	if output != "" {
 
 		pathTpl = template.Must(template.New("outfile").Parse(output))
@@ -122,9 +142,10 @@ func main() {
 	// Open up our database connection.
 	// I've set up a database on my local machine using phpmyadmin.
 	// The database is called testDb
-	db, err := sql.Open("mysql", server)
+	log.Debug("connect to " + dbtype)
+	db, err := sql.Open(dbtype, server)
 	check(err)
-	log.Debug("Connected to database!")
+	log.Debugf("Connected to %s database %s at %s:%d !", dbtype, dbname, host, port)
 
 	// defer the close till after the main function has finished
 	// executing
