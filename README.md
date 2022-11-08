@@ -6,7 +6,7 @@ Export SQL tables or queries to file(s) in JSON/Markdown format. Mainly to use w
 ## Usage
 
 ### Export SQL query to one JSON list or file
-For brevity, we omit [db credentials](#dbcred) in examples, assume it comes from environment or .env file
+For brevity, we omit [database credentials](#database-credentials) in examples, assume it comes from environment or .env file
 
 ~~~
 $ ./sql-export -q 'SELECT title, price FROM libro LIMIT 2'  
@@ -100,7 +100,7 @@ Usage of ./sql-export:
 
 You may use table name as value to `-q`. `-q tableName` equals to `-q SELECT * FROM tableName`
 
-### [Database credentials][#dbcred]
+### Database credentials
 
 |value         |key      |environment |default value|
 |---           |---      |---         |---|
