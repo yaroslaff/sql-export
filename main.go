@@ -19,6 +19,8 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/joho/godotenv/autoload"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func check(e error) {
@@ -66,6 +68,21 @@ func getEnvDef(key, def string) string {
 	return value
 }
 
+func getDefaultPort(dbtype string, port int) int {
+
+	if port != 0 {
+		return port
+	}
+
+	defPorts := map[string]int{
+		"mysql":    3306,
+		"postgres": 5432,
+	}
+
+	return defPorts[dbtype]
+
+}
+
 func main() {
 
 	//def_server := "username:password@tcp(127.0.0.1:3306)/test"
@@ -75,9 +92,11 @@ func main() {
 	def_dbuser := getEnvDef("DBUSER", def_user.Username)
 	def_dbpass := getEnvDef("DBPASS", "")
 
-	def_port, _ := strconv.Atoi(getEnvDef("DBPORT", "3306"))
+	def_port, _ := strconv.Atoi(getEnvDef("DBPORT", "0"))
 	def_dbname := getEnvDef("DBNAME", "")
 	def_dbtype := "mysql"
+
+	var conn_string string
 
 	var (
 		host     string
@@ -137,13 +156,22 @@ func main() {
 
 	}
 
-	server := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, dbname)
+	port = getDefaultPort(dbtype, port)
+
+	switch dbtype {
+	case "mysql":
+		conn_string = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, dbname)
+	case "postgres":
+		conn_string = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", user, password, host, port, dbname)
+	case "sqlite3":
+		conn_string = dbname
+	}
 
 	// Open up our database connection.
 	// I've set up a database on my local machine using phpmyadmin.
 	// The database is called testDb
-	log.Debug("connect to " + dbtype)
-	db, err := sql.Open(dbtype, server)
+	log.Debug("connect to " + conn_string)
+	db, err := sql.Open(dbtype, conn_string)
 	check(err)
 	log.Debugf("Connected to %s database %s at %s:%d !", dbtype, dbname, host, port)
 
@@ -155,7 +183,6 @@ func main() {
 
 	if !strings.Contains(q, " ") {
 		q = fmt.Sprintf("SELECT * FROM %s", q)
-		log.Debug("Use query: ", q)
 	}
 
 	log.Debug("Run query: ", q)
@@ -197,9 +224,9 @@ func main() {
 			v := string(rawResult[i])
 
 			switch t := ct.DatabaseTypeName(); t {
-			case "INT", "SMALLINT":
+			case "INT", "SMALLINT", "INTEGER", "INT4":
 				m[name], _ = strconv.Atoi(v)
-			case "CHAR", "VARCHAR", "DATETIME", "DATE", "TEXT":
+			case "CHAR", "VARCHAR", "DATETIME", "DATE", "TEXT", "TIMESTAMP":
 				m[name] = v
 			case "DECIMAL":
 				m[name], err = strconv.ParseFloat(v, 64)
@@ -230,7 +257,7 @@ func main() {
 			fmt.Printf("ERROR: %s", err)
 			return
 		}
-		fmt.Printf("%s", j)
+		fmt.Printf("%s\n", j)
 	}
 
 }

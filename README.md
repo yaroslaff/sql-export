@@ -3,6 +3,8 @@ Export SQL tables or queries to file(s) in JSON/Markdown format. Mainly to use w
 
 `sql-export` can generate thousands .md files with YAML frontmatter based on content from mysql database in few seconds.
 
+MySQL/MariaDB (default), PostgreSQL and SQLite3 databases are supported. For sqlite3 use filename as DBNAME.
+
 ## Usage
 
 ### Export SQL query to one JSON list or file
@@ -106,7 +108,7 @@ You may use table name as value to `-q`. `-q tableName` equals to `-q SELECT * F
 |---           |---      |---         |---|
 |database type | `-d`    |`$DBTYPE`   | `mysql`|
 |database host | `-h`    |`$DBHOST`   | `localhost`|
-|database port | `-port` |`$DBPORT`   | 3306 |
+|database port | `-port` |`$DBPORT`   | 3306 or 5432 |
 |database user | `-u`    |`$DBUSER`   | current system user name |
 |database name | `-p`    |`$DBPASS`   |   |
 
