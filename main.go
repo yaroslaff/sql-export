@@ -83,6 +83,14 @@ func getDefaultPort(dbtype string, port int) int {
 
 }
 
+var Usage = func() {
+
+	version := "0.0.4"
+
+	fmt.Fprintf(flag.CommandLine.Output(), "sql-export ( https://github.com/yaroslaff/sql-export ) version %s\nUsage:\n", version)
+	flag.PrintDefaults()
+}
+
 func main() {
 
 	//def_server := "username:password@tcp(127.0.0.1:3306)/test"
@@ -125,6 +133,8 @@ func main() {
 	flag.StringVar(&format, "f", "template", "Format: json or md (markdown with frontmatter) or template")
 	flag.StringVar(&tpl, "tpl", "", "Template input file")
 	flag.BoolVar(&verbose, "v", false, "verbose mode")
+
+	flag.Usage = Usage
 
 	flag.Parse()
 
