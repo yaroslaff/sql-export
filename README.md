@@ -121,6 +121,19 @@ DBNAME=books
 ~~~
 
 ## Install/build
+
+Three different methods.
+
+### Releases
+download precompiled binary from https://github.com/yaroslaff/sql-export from **Releases** (if your arch is x86_64).
+
+### go install
+If you have moderm golang installed:
+~~~
+go install github.com/yaroslaff/sql-export@latest
+~~~
+
+### clone and build from sources
 ~~~
 git clone https://github.com/yaroslaff/sql-export
 cd sql-export
