@@ -125,7 +125,7 @@ DBNAME=books
 Three different methods.
 
 ### Releases
-download precompiled binary from https://github.com/yaroslaff/sql-export from **Releases** (if your arch is x86_64).
+download precompiled binary from https://github.com/yaroslaff/sql-export from [latest release](https://github.com/yaroslaff/sql-export/releases/latest) (if your arch is x86_64).
 
 ### go install
 If you have modern golang installed:
@@ -144,7 +144,13 @@ go build
 cp sql-export /usr/local/bin
 ~~~
 
-or download from https://github.com/yaroslaff/sql-export from **Releases** (if your arch is x86_64).
+### Post-install test
+Optional quick post-install test with sqlite3 db from sample [Chinook database](https://github.com/lerocha/chinook-database):
+
+~~~
+wget https://github.com/lerocha/chinook-database/raw/master/ChinookDatabase/DataSources/Chinook_Sqlite.sqlite
+sql-export -n Chinook_Sqlite.sqlite -d sqlite3 -q Customer
+~~~
 
 ## Benchmarking
 sql-export is written in Go, so it's very fast. I test on database with 57000+ records.
