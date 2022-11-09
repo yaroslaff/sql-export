@@ -128,7 +128,7 @@ Three different methods.
 download precompiled binary from https://github.com/yaroslaff/sql-export from **Releases** (if your arch is x86_64).
 
 ### go install
-If you have moderm golang installed:
+If you have modern golang installed:
 ~~~
 go install github.com/yaroslaff/sql-export@latest
 ~~~
