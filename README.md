@@ -133,6 +133,9 @@ If you have modern golang installed:
 go install github.com/yaroslaff/sql-export@latest
 ~~~
 
+Installed (default) to ~/go/bin/sql-export
+
+
 ### clone and build from sources
 ~~~
 git clone https://github.com/yaroslaff/sql-export
