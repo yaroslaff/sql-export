@@ -85,10 +85,15 @@ func getDefaultPort(dbtype string, port int) int {
 
 var Usage = func() {
 
-	version := "0.0.6"
+	version := "0.0.7"
 
 	fmt.Fprintf(flag.CommandLine.Output(), "sql-export ( https://github.com/yaroslaff/sql-export ) version %s\nUsage:\n", version)
 	flag.PrintDefaults()
+}
+
+func replace(input, from, to string) string {
+
+	return strings.Replace(input, from, to, -1)
 }
 
 func main() {
@@ -150,7 +155,11 @@ func main() {
 	/* prepare templates */
 	if output != "" {
 
-		pathTpl = template.Must(template.New("outfile").Parse(output))
+		funcMap := template.FuncMap{
+			"replace": replace,
+		}
+
+		pathTpl = template.Must(template.New("outfile").Funcs(funcMap).Parse(output))
 		log.Debugf("Content: %#v", contentTpl)
 
 		if format != "template" && format != "json" && format != "md" {
@@ -161,10 +170,12 @@ func main() {
 			if tpl == "" {
 				panic("When format (-f) is template, --tpl is required")
 			}
-			contentTpl = template.Must(template.New(path.Base(tpl)).ParseFiles(tpl))
+			contentTpl = template.Must(template.New(path.Base(tpl)).Funcs(funcMap).ParseFiles(tpl))
 		}
 
 	}
+
+	/* prepare port and conn_string */
 
 	port = getDefaultPort(dbtype, port)
 
