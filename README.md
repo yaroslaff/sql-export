@@ -73,6 +73,15 @@ title: ALLGEMEINE GESCHICHTE DER HANDFEUERWAFFEN. Eine Übersicht ihrer Entwicke
 price: 45
 ~~~
 
+### Use JSON as input source (generate markdown files based on json)
+
+To read dataset from JSON, just pass filename as `-q` parameter.
+
+~~~
+./sql-export -q libro.json -o '/tmp/libro/{{.id}}.md' -f md
+~~~
+
+
 ## Options
 ~~~
 $ ./sql-export --help

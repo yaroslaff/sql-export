@@ -85,7 +85,7 @@ func getDefaultPort(dbtype string, port int) int {
 
 var Usage = func() {
 
-	version := "0.0.7"
+	version := "0.0.8"
 
 	fmt.Fprintf(flag.CommandLine.Output(), "sql-export ( https://github.com/yaroslaff/sql-export ) version %s\nUsage:\n", version)
 	flag.PrintDefaults()
@@ -94,6 +94,105 @@ var Usage = func() {
 func replace(input, from, to string) string {
 
 	return strings.Replace(input, from, to, -1)
+}
+
+func read_any_json(path string, data *[]map[string]interface{}) {
+	json_bytes, err := os.ReadFile(path)
+	check(err)
+	json.Unmarshal(json_bytes, data)
+}
+
+func read_from_db(dbtype, user, password, host, dbname, q string, port int) []map[string]interface{} {
+
+	/* prepare port and conn_string */
+	var conn_string string
+	mlist := make([]map[string]interface{}, 0)
+
+	port = getDefaultPort(dbtype, port)
+
+	switch dbtype {
+	case "mysql":
+		conn_string = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, dbname)
+	case "postgres":
+		conn_string = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", user, password, host, port, dbname)
+	case "sqlite3":
+		conn_string = dbname
+	}
+
+	// Open up our database connection.
+	// I've set up a database on my local machine using phpmyadmin.
+	// The database is called testDb
+	log.Debug("connect to " + conn_string)
+	db, err := sql.Open(dbtype, conn_string)
+	check(err)
+	log.Debugf("Connected to %s database %s at %s:%d !", dbtype, dbname, host, port)
+
+	// defer the close till after the main function has finished
+	// executing
+	defer db.Close()
+
+	if !strings.Contains(q, " ") {
+		q = fmt.Sprintf("SELECT * FROM %s", q)
+	}
+
+	log.Debug("Run query: ", q)
+	rows, err := db.Query(q)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	cols, _ := rows.Columns()
+	colTypes, _ := rows.ColumnTypes()
+	rawResult := make([][]byte, len(cols))
+	dest := make([]interface{}, len(cols)) // A temporary interface{} slice
+
+	for i, _ := range rawResult {
+		dest[i] = &rawResult[i] // Put pointers to each string in the interface slice
+	}
+
+	for rows.Next() {
+
+		m := make(map[string]interface{})
+
+		// Scan the result into the column pointers...
+		if err := rows.Scan(dest...); err != nil {
+			return nil
+		}
+
+		// Create our map, and retrieve the value for each column from the pointers slice,
+		// storing it in the map with the name of the column as the key.
+		//m := make(map[string]interface{})
+		for i, ct := range colTypes {
+			name := ct.Name()
+
+			if rawResult[i] == nil {
+				m[name] = nil
+				continue
+			}
+
+			v := string(rawResult[i])
+
+			switch t := ct.DatabaseTypeName(); t {
+			case "INT", "SMALLINT", "INTEGER", "INT4":
+				m[name], _ = strconv.Atoi(v)
+			case "CHAR", "VARCHAR", "DATETIME", "DATE", "TEXT", "TIMESTAMP":
+				m[name] = v
+			case "DECIMAL":
+				m[name], err = strconv.ParseFloat(v, 64)
+				if err != nil {
+					fmt.Printf("error: %s (%s)", err, v)
+					// return
+				}
+			default:
+				fmt.Println("Do not know how to convert" + t)
+			}
+
+			//val := dest[i].(*interface{})
+			//m[colName] = *val
+		}
+		mlist = append(mlist, m)
+	}
+	return mlist
 }
 
 func main() {
@@ -108,8 +207,6 @@ func main() {
 	def_port, _ := strconv.Atoi(getEnvDef("DBPORT", "0"))
 	def_dbname := getEnvDef("DBNAME", "")
 	def_dbtype := "mysql"
-
-	var conn_string string
 
 	var (
 		host     string
@@ -127,13 +224,15 @@ func main() {
 
 	var pathTpl, contentTpl *template.Template
 
+	mlist := make([]map[string]interface{}, 0)
+
 	flag.StringVar(&host, "h", def_dbhost, "$DBHOST")
 	flag.IntVar(&port, "port", def_port, "$DBPORT")
 	flag.StringVar(&user, "u", def_dbuser, "$DBUSER")
 	flag.StringVar(&password, "p", def_dbpass, "$DBPASS")
 	flag.StringVar(&dbtype, "d", def_dbtype, "$DBTYPE")
 	flag.StringVar(&dbname, "n", def_dbname, "$DBNAME")
-	flag.StringVar(&q, "q", "", "SQL query or table name")
+	flag.StringVar(&q, "q", "", "SQL query or table name or filename")
 	flag.StringVar(&output, "o", "", "Output filename")
 	flag.StringVar(&format, "f", "template", "Format: json or md (markdown with frontmatter) or template")
 	flag.StringVar(&tpl, "tpl", "", "Template input file")
@@ -175,101 +274,20 @@ func main() {
 
 	}
 
-	/* prepare port and conn_string */
-
-	port = getDefaultPort(dbtype, port)
-
-	switch dbtype {
-	case "mysql":
-		conn_string = fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", user, password, host, port, dbname)
-	case "postgres":
-		conn_string = fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", user, password, host, port, dbname)
-	case "sqlite3":
-		conn_string = dbname
-	}
-
-	// Open up our database connection.
-	// I've set up a database on my local machine using phpmyadmin.
-	// The database is called testDb
-	log.Debug("connect to " + conn_string)
-	db, err := sql.Open(dbtype, conn_string)
-	check(err)
-	log.Debugf("Connected to %s database %s at %s:%d !", dbtype, dbname, host, port)
-
-	// defer the close till after the main function has finished
-	// executing
-	defer db.Close()
-
-	// fix query
-
-	if !strings.Contains(q, " ") {
-		q = fmt.Sprintf("SELECT * FROM %s", q)
-	}
-
-	log.Debug("Run query: ", q)
-	rows, err := db.Query(q)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	cols, _ := rows.Columns()
-	colTypes, _ := rows.ColumnTypes()
-	rawResult := make([][]byte, len(cols))
-	dest := make([]interface{}, len(cols)) // A temporary interface{} slice
-	mlist := make([]map[string]interface{}, 0)
-
-	for i, _ := range rawResult {
-		dest[i] = &rawResult[i] // Put pointers to each string in the interface slice
-	}
-
-	for rows.Next() {
-
-		m := make(map[string]interface{})
-
-		// Scan the result into the column pointers...
-		if err := rows.Scan(dest...); err != nil {
-			return
+	if strings.HasSuffix(q, ".json") {
+		if _, err := os.Stat(q); err == nil {
+			read_any_json(q, &mlist)
+			log.Debugf("Read %d items", len(mlist))
 		}
+	} else {
+		/* read from database */
+		mlist = read_from_db(dbtype, user, password, host, dbname, q, port)
+	}
 
-		// Create our map, and retrieve the value for each column from the pointers slice,
-		// storing it in the map with the name of the column as the key.
-		//m := make(map[string]interface{})
-		for i, ct := range colTypes {
-			name := ct.Name()
-
-			if rawResult[i] == nil {
-				m[name] = nil
-				continue
-			}
-
-			v := string(rawResult[i])
-
-			switch t := ct.DatabaseTypeName(); t {
-			case "INT", "SMALLINT", "INTEGER", "INT4":
-				m[name], _ = strconv.Atoi(v)
-			case "CHAR", "VARCHAR", "DATETIME", "DATE", "TEXT", "TIMESTAMP":
-				m[name] = v
-			case "DECIMAL":
-				m[name], err = strconv.ParseFloat(v, 64)
-				if err != nil {
-					fmt.Printf("error: %s (%s)", err, v)
-					// return
-				}
-			default:
-				fmt.Println("Do not know how to convert" + t)
-			}
-
-			//val := dest[i].(*interface{})
-			//m[colName] = *val
+	if pathTpl != nil {
+		for _, mrun := range mlist {
+			saveFile(pathTpl, contentTpl, format, mrun)
 		}
-
-		// Outputs: map[columnName:value columnName2:value2 columnName3:value3 ...]
-		if pathTpl != nil {
-			saveFile(pathTpl, contentTpl, format, m)
-		} else {
-			mlist = append(mlist, m)
-		}
-
 	}
 
 	if output == "" {
@@ -280,5 +298,4 @@ func main() {
 		}
 		fmt.Printf("%s\n", j)
 	}
-
 }
