@@ -36,7 +36,7 @@ func saveFile(pathTpl *template.Template, bodyTpl *template.Template, format str
 	err := pathTpl.Execute(&path, m)
 	check(err)
 
-	log.Debugf("Write %s file: %s\n", format, path.String())
+	log.Debugf("Write %s file: %s", format, path.String())
 
 	f, err := os.Create(path.String())
 	check(err)
@@ -85,7 +85,7 @@ func getDefaultPort(dbtype string, port int) int {
 
 var Usage = func() {
 
-	version := "0.0.8"
+	version := "0.0.9"
 
 	fmt.Fprintf(flag.CommandLine.Output(), "sql-export ( https://github.com/yaroslaff/sql-export ) version %s\nUsage:\n", version)
 	flag.PrintDefaults()
@@ -259,7 +259,7 @@ func main() {
 		}
 
 		pathTpl = template.Must(template.New("outfile").Funcs(funcMap).Parse(output))
-		log.Debugf("Content: %#v", contentTpl)
+		// log.Debugf("Content: %#v", contentTpl)
 
 		if format != "template" && format != "json" && format != "md" {
 			panic("Format must be one of template/json/md")
@@ -285,9 +285,12 @@ func main() {
 	}
 
 	if pathTpl != nil {
-		for _, mrun := range mlist {
+		var idx int
+		var mrun map[string]interface{}
+		for idx, mrun = range mlist {
 			saveFile(pathTpl, contentTpl, format, mrun)
 		}
+		fmt.Printf("Saved %d files\n", idx)
 	}
 
 	if output == "" {
