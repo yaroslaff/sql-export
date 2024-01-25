@@ -43,7 +43,7 @@ $ cat /tmp/libro/123.json
 ~~~
 
 ### Export SQL to many markdown files with YAML frontmatter 
-Use `-f md` and provide template to output filename `-o '/tmp/libro/{{.id}}.json'`.
+Use `-f md` and provide template to output filename `-o '/tmp/libro/{{.id}}.md'`.
 
 ~~~
 $ ./sql-export -q 'SELECT id, title, price FROM libro' -f md -o '/tmp/libro/{{.id}}.md'
